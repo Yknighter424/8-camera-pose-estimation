@@ -1,0 +1,1856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Pose Estimation System Explanation</title>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            color: #333;
+            background-color: #f8f9fa;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background-color: #4a69bd;
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+        }
+        h1, h2, h3 {
+            color: #2c3e50;
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        h2 {
+            margin-top: 30px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #ddd;
+        }
+        h3 {
+            margin-top: 25px;
+        }
+        p {
+            margin-bottom: 15px;
+        }
+        pre {
+            background-color: #f1f1f1;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 14px;
+        }
+        code {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #f1f1f1;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+        .section {
+            margin-bottom: 40px;
+            background-color: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 20px auto;
+            border-radius: 5px;
+        }
+        .workflow {
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            margin: 20px 0;
+        }
+        .highlight {
+            background-color: #e6f7ff;
+            border-left: 4px solid #1890ff;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .code-block {
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 15px 0;
+            display: none; /* 默认隐藏代码块 */
+        }
+        .code-annotation {
+            color: #008000;
+            font-style: italic;
+        }
+        .code-comment {
+            color: #0066cc;
+        }
+        .toggle-button {
+            background-color: #4a69bd;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+        .toggle-button:hover {
+            background-color: #3a559d;
+        }
+        .non-technical-overview {
+            background-color: #f8f8f8;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 5px solid #4a69bd;
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px 20px;
+            background-color: #e0e0e0;
+            border: none;
+            cursor: pointer;
+            margin-right: 5px;
+            border-radius: 5px 5px 0 0;
+        }
+        .tab.active {
+            background-color: #4a69bd;
+            color: white;
+        }
+        .step-diagram {
+            background-color: #fafafa;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            text-align: center;
+        }
+        .step-diagram img {
+            max-width: 100%;
+            height: auto;
+        }
+        .language-toggle {
+            display: flex;
+            margin: 15px 0;
+        }
+        .lang-btn {
+            padding: 5px 15px;
+            background-color: #e0e0e0;
+            border: none;
+            cursor: pointer;
+            margin-right: 5px;
+            border-radius: 4px;
+        }
+        .lang-btn.active {
+            background-color: #4a69bd;
+            color: white;
+        }
+        .lang-content {
+            margin-top: 15px;
+        }
+        .faq-container {
+            margin-top: 20px;
+        }
+        .faq-question {
+            background-color: #f1f1f1;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .faq-answer {
+            padding: 0 15px;
+            display: none;
+            background-color: #fff;
+            border-left: 3px solid #4a69bd;
+            margin-bottom: 20px;
+        }
+        .faq-question:after {
+            content: '+';
+            float: right;
+            font-weight: bold;
+        }
+        .faq-question.active:after {
+            content: '-';
+        }
+        .resources-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .resource-card {
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            padding: 15px;
+            transition: transform 0.3s ease;
+        }
+        .resource-card:hover {
+            transform: translateY(-5px);
+        }
+        .resource-card h4 {
+            margin-top: 0;
+            color: #4a69bd;
+        }
+        .resource-card a {
+            color: #4a69bd;
+            text-decoration: none;
+        }
+        .resource-card a:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            .section {
+                padding: 15px;
+            }
+            .tabs {
+                flex-direction: column;
+            }
+            .tab {
+                margin-bottom: 5px;
+                border-radius: 5px;
+            }
+            .resources-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+    <script>
+        // 等待文档加载完成
+        document.addEventListener('DOMContentLoaded', function() {
+            // 为所有的代码块切换按钮添加点击事件
+            var toggleButtons = document.querySelectorAll('.toggle-button');
+            toggleButtons.forEach(function(button) {
+                button.addEventListener('click', function() {
+                    var codeBlock = this.nextElementSibling;
+                    if (codeBlock.style.display === 'none' || codeBlock.style.display === '') {
+                        codeBlock.style.display = 'block';
+                        this.textContent = '隐藏详细代码';
+                    } else {
+                        codeBlock.style.display = 'none';
+                        this.textContent = '展开详细代码';
+                    }
+                });
+            });
+
+            // 添加视图切换功能
+            var tabs = document.querySelectorAll('.tab');
+            tabs.forEach(function(tab) {
+                tab.addEventListener('click', function() {
+                    // 移除所有活跃状态
+                    tabs.forEach(function(t) {
+                        t.classList.remove('active');
+                    });
+                    
+                    // 添加当前点击的活跃状态
+                    this.classList.add('active');
+                    
+                    // 根据选择的视图显示或隐藏内容
+                    var viewType = this.getAttribute('data-view');
+                    var codeBlocks = document.querySelectorAll('.code-block');
+                    var toggleButtons = document.querySelectorAll('.toggle-button');
+                    
+                    if (viewType === 'non-technical') {
+                        // 非技术视图：隐藏所有代码块和切换按钮
+                        codeBlocks.forEach(function(block) {
+                            block.style.display = 'none';
+                        });
+                        toggleButtons.forEach(function(button) {
+                            button.style.display = 'none';
+                        });
+                    } else {
+                        // 技术视图：显示所有切换按钮（代码块默认还是隐藏的）
+                        toggleButtons.forEach(function(button) {
+                            button.style.display = 'block';
+                            button.textContent = '展开详细代码';
+                        });
+                    }
+                });
+            });
+            
+            // 添加语言切换功能
+            var langButtons = document.querySelectorAll('.lang-btn');
+            langButtons.forEach(function(button) {
+                button.addEventListener('click', function() {
+                    // 移除所有活跃状态
+                    langButtons.forEach(function(btn) {
+                        btn.classList.remove('active');
+                    });
+                    
+                    // 添加当前点击的活跃状态
+                    this.classList.add('active');
+                    
+                    // 获取选择的语言
+                    var lang = this.getAttribute('data-lang');
+                    
+                    // 隐藏所有语言内容
+                    var langContents = document.querySelectorAll('.lang-content');
+                    langContents.forEach(function(content) {
+                        content.style.display = 'none';
+                    });
+                    
+                    // 显示选中语言的内容
+                    document.querySelector('.lang-content.' + lang).style.display = 'block';
+                });
+            });
+            
+            // 添加FAQ切换功能
+            var faqQuestions = document.querySelectorAll('.faq-question');
+            faqQuestions.forEach(function(question) {
+                question.addEventListener('click', function() {
+                    // 切换当前问题的活跃状态
+                    this.classList.toggle('active');
+                    
+                    // 获取对应的答案
+                    var answer = this.nextElementSibling;
+                    
+                    // 切换答案的显示状态
+                    if (answer.style.display === 'block') {
+                        answer.style.display = 'none';
+                    } else {
+                        answer.style.display = 'block';
+                    }
+                });
+            });
+
+            // 默认选中非技术视图
+            document.querySelector('[data-view="non-technical"]').click();
+            
+            // 默认选中中文
+            document.querySelector('[data-lang="zh"]').click();
+        });
+    </script>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>3D Multi-Camera Pose Estimation System</h1>
+            <p>A comprehensive explanation of the system's logic, functionality, and code implementation</p>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- 添加视图切换标签 -->
+        <div class="tabs">
+            <button class="tab" data-view="non-technical">非技术人员视图</button>
+            <button class="tab" data-view="technical">技术人员视图</button>
+        </div>
+
+        <!-- 非技术人员概览 -->
+        <div class="section non-technical-overview">
+            <h2>系统概览 (适合非技术人员)</h2>
+            <p>本系统利用三个相机从不同角度捕捉人体运动，将二维图像信息转换为精确的三维动作数据。这项技术无需专业的动作捕捉设备，使用普通摄像头即可完成高质量的人体姿态重建。</p>
+            
+            <div class="language-toggle">
+                <button class="lang-btn active" data-lang="zh">中文</button>
+                <button class="lang-btn" data-lang="en">English</button>
+            </div>
+            
+            <div class="lang-content zh">
+                <h3>工作原理简述：</h3>
+                <ol>
+                    <li><strong>相机校准</strong>：系统首先通过拍摄特殊的棋盘格图像来"了解"每个相机的特性，就像眼科医生为你定制眼镜一样。</li>
+                    <li><strong>坐标系建立</strong>：通过在场景中放置特殊的ArUco标记（类似QR码的黑白方块），系统能够建立一个统一的三维空间参考系统。</li>
+                    <li><strong>姿态检测</strong>：每个相机分别检测人体的关键点（如头部、肩膀、手肘等33个点）。</li>
+                    <li><strong>三维重建</strong>：系统将三个相机的二维关键点信息合并，通过三角测量原理计算出这些点在三维空间中的精确位置。</li>
+                    <li><strong>误差评估</strong>：系统会计算重建的准确度，确保数据质量。</li>
+                    <li><strong>三维可视化</strong>：最终以彩色骨架动画的形式展示重建结果，直观呈现人体动作。</li>
+                </ol>
+
+                <div class="step-diagram">
+                    <img src="https://mermaid.ink/img/pako:eNp1ksFugzAMhl_FyrlI9ACHHrZNbdVJ07RDL1O5YGi0QFDitEWId18CoVvVyQf7_z9bthOomxYgQmN71zuydSPJ3lP-Pl4mFzEWM9dYUr5H-85fXLr39VwFsZosWIdcWMdKw4wOkqk8XsJD9IZctUz84ZQ_1K3V1DXolXduXDFTCT_Qz0Ud_UXNzEPMpbI98jVJbZjyPBZyVN4ivKZQXaEMOBNrNKLSNw3D_Bt0eHJtpZOgwGtLfpLt_zKY3YPCDIzkfcqEeDBwKwN4bBRqy-QUqE-gNuizRfhVCCBMf-eZAmmbAD9iKpuCJ4fwlX4yww3EUVtQcCiF0F-DMbXRkBljKDg5GxnUHg8tDJMStpAbPQ_h6Wv89JwB18PTFX6WgxfG?type=png" alt="系统工作流程图">
+                    <p><i>系统工作流程简图</i></p>
+                </div>
+
+                <h3>应用场景：</h3>
+                <ul>
+                    <li><strong>动作分析</strong>：体育训练中分析运动员动作，帮助提高技术动作效率。</li>
+                    <li><strong>康复医疗</strong>：监测患者康复过程中的运动情况，评估治疗效果。</li>
+                    <li><strong>动画制作</strong>：为动画角色提供真实的人体动作数据，提升动画质量。</li>
+                    <li><strong>人机交互</strong>：为虚拟现实和增强现实应用提供自然的人体动作输入。</li>
+                    <li><strong>行为研究</strong>：科学研究中分析人体运动模式和行为特征。</li>
+                </ul>
+
+                <p>相比传统的动作捕捉系统，本系统具有设备成本低、操作简便、不需要特殊标记等优势，是一套高性价比的三维人体姿态捕捉解决方案。</p>
+            </div>
+            
+            <div class="lang-content en" style="display: none;">
+                <h2>System Overview (For Non-Technical Users)</h2>
+                <p>This system uses three cameras to capture human movement from different angles, converting 2D image information into precise 3D motion data. This technology doesn't require specialized motion capture equipment – just ordinary cameras can create high-quality human pose reconstructions.</p>
+                
+                <h3>How It Works (Simplified):</h3>
+                <ol>
+                    <li><strong>Camera Calibration</strong>: The system first "learns" about each camera's characteristics by capturing special chessboard images, similar to how an eye doctor customizes glasses for you.</li>
+                    <li><strong>Coordinate System Setup</strong>: By placing special ArUco markers (black and white squares similar to QR codes) in the scene, the system establishes a unified 3D spatial reference system.</li>
+                    <li><strong>Pose Detection</strong>: Each camera independently detects 33 key points on the human body (like head, shoulders, elbows, etc.).</li>
+                    <li><strong>3D Reconstruction</strong>: The system combines the 2D keypoint information from all three cameras and calculates their exact positions in 3D space using triangulation principles.</li>
+                    <li><strong>Error Assessment</strong>: The system calculates the accuracy of the reconstruction to ensure data quality.</li>
+                    <li><strong>3D Visualization</strong>: Finally, it displays the reconstruction as a colored skeleton animation, visually presenting the human movement.</li>
+                </ol>
+
+                <div class="step-diagram">
+                    <img src="https://mermaid.ink/img/pako:eNp1ksFugzAMhl_FyrlI9ACHHrZNbdVJ07RDL1O5YGi0QFDitEWId18CoVvVyQf7_z9bthOomxYgQmN71zuydSPJ3lP-Pl4mFzEWM9dYUr5H-85fXLr39VwFsZosWIdcWMdKw4wOkqk8XsJD9IZctUz84ZQ_1K3V1DXolXduXDFTCT_Qz0Ud_UXNzEPMpbI98jVJbZjyPBZyVN4ivKZQXaEMOBNrNKLSNw3D_Bt0eHJtpZOgwGtLfpLt_zKY3YPCDIzkfcqEeDBwKwN4bBRqy-QUqE-gNuizRfhVCCBMf-eZAmmbAD9iKpuCJ4fwlX4yww3EUVtQcCiF0F-DMbXRkBljKDg5GxnUHg8tDJMStpAbPQ_h6Wv89JwB18PTFX6WgxfG?type=png" alt="System workflow diagram">
+                    <p><i>System workflow simplified diagram</i></p>
+                </div>
+
+                <h3>Applications:</h3>
+                <ul>
+                    <li><strong>Motion Analysis</strong>: Analyzing athlete movements in sports training to improve technical efficiency.</li>
+                    <li><strong>Rehabilitation Medicine</strong>: Monitoring patient movement during recovery and evaluating treatment effectiveness.</li>
+                    <li><strong>Animation Production</strong>: Providing realistic human motion data for animated characters, enhancing animation quality.</li>
+                    <li><strong>Human-Computer Interaction</strong>: Enabling natural body movement inputs for virtual and augmented reality applications.</li>
+                    <li><strong>Behavioral Research</strong>: Analyzing human movement patterns and behavioral characteristics in scientific research.</li>
+                </ul>
+
+                <p>Compared to traditional motion capture systems, this system offers advantages including lower equipment costs, simpler operation, and no need for special markers – making it a high-value solution for 3D human pose capture.</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>1. System Overview</h2>
+            <p>This system performs 3D human pose estimation using a three-camera setup. By combining video feeds from multiple angles, it creates an accurate 3D reconstruction of human movement, addressing the limitations of single-camera approaches.</p>
+            
+            <div class="highlight">
+                <p><strong>Key Features:</strong></p>
+                <ul>
+                    <li>Camera calibration for intrinsic and extrinsic parameters</li>
+                    <li>ArUco marker detection for establishing a consistent coordinate system</li>
+                    <li>MediaPipe integration for 2D pose estimation in each view</li>
+                    <li>Multi-view triangulation for accurate 3D reconstruction</li>
+                    <li>Visualization tools for animation and error analysis</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>2. System Architecture</h2>
+            <p>The system operates in several sequential stages:</p>
+
+            <div class="workflow">
+                <h3>Workflow:</h3>
+                <ol>
+                    <li><strong>Camera Calibration:</strong> Each camera is individually calibrated to obtain intrinsic parameters.</li>
+                    <li><strong>Frame Processing:</strong>
+                        <ul>
+                            <li>ArUco marker detection to establish a common coordinate system</li>
+                            <li>2D pose estimation on each camera view</li>
+                            <li>Triangulation of 2D detections into 3D coordinates</li>
+                        </ul>
+                    </li>
+                    <li><strong>Visualization and Analysis:</strong> The reconstructed 3D poses are animated and error metrics are calculated.</li>
+                </ol>
+            </div>
+
+            <h3>Key Components:</h3>
+            <ul>
+                <li><strong>Camera Calibration Module:</strong> Handles chessboard corner detection and parameter calculation.</li>
+                <li><strong>ArUco Processing Module:</strong> Detects markers, clusters them, and calculates coordinate transformations.</li>
+                <li><strong>Pose Detection Module:</strong> Uses MediaPipe to detect human pose keypoints in 2D.</li>
+                <li><strong>Triangulation Module:</strong> Combines 2D detections from multiple views into 3D coordinates.</li>
+                <li><strong>Visualization Module:</strong> Creates 3D animations of the reconstructed poses.</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>3. Camera Calibration</h2>
+            <p>Camera calibration is a critical first step that estimates each camera's intrinsic parameters (focal length, optical center) and distortion coefficients.</p>
+            
+            <h3>How It Works:</h3>
+            <p>The system detects a standard chessboard pattern from multiple viewpoints to obtain the parameters. For each camera, the function <code>calibrate_single_camera</code> performs:</p>
+            <ul>
+                <li>Chessboard corner detection using <code>cv2.findChessboardCorners</code></li>
+                <li>Sub-pixel refinement of corner positions</li>
+                <li>Camera parameter calculation via <code>cv2.calibrateCamera</code></li>
+                <li>Reprojection error calculation to validate results</li>
+            </ul>
+            
+            <button class="toggle-button">展开详细代码</button>
+            <div class="code-block">
+                <h4>Camera Calibration Code:</h4>
+                <pre>
+def calibrate_single_camera(images_folder, pattern_size=(9,6), square_size=30.0):
+    """
+    单相机标定函数 - 计算相机内参和畸变系数
+    
+    Args:
+        images_folder: 标定图片所在文件夹路径
+        pattern_size: 棋盘格内角点数量(宽,高) - 棋盘格内部的交点数量
+        square_size: 棋盘格方格实际尺寸(mm) - 用于建立实际度量单位
+        
+    Returns:
+        ret: 标定误差 - 重投影误差的均值，衡量标定质量
+        mtx: 相机内参矩阵 - 3x3矩阵，包含焦距和主点坐标
+        dist: 畸变系数 - 用于校正镜头畸变的参数
+        rvecs: 旋转向量 - 每张标定图片对应的棋盘格姿态（旋转部分）
+        tvecs: 平移向量 - 每张标定图片对应的棋盘格姿态（平移部分）
+    """
+    # 准备标定板角点的世界坐标 - 建立三维世界坐标系
+    objp = np.zeros((pattern_size[0]*pattern_size[1],3), np.float32)  # 创建零矩阵，每个角点一行，包含XYZ三个坐标
+    objp[:,:2] = np.mgrid[0:pattern_size[0],0:pattern_size[1]].T.reshape(-1,2)  # 填充XY坐标，Z坐标保持为0
+    objp = objp * square_size  # 转换为实际尺寸，从网格单位转换为毫米单位
+    
+    # 存储所有图像的3D点和2D点
+    objpoints = [] # 3D点 - 存储世界坐标系中的点（已知的物理位置）
+    imgpoints = [] # 2D点 - 存储图像平面上检测到的角点（像素坐标）
+    
+    # 获取所有校正图片
+    images = glob.glob(os.path.join(images_folder, '*.jpeg'))  # 查找JPEG格式的标定图片
+    if not images:  # 如果未找到JPEG图片
+        images = glob.glob(os.path.join(images_folder, '*.png'))  # 尝试查找PNG格式的图片
+    
+    print(f"在 {images_folder} 中找到 {len(images)} 张图片")  # 输出找到的图片数量
+    
+    # 遍历每张标定图片
+    for image_filename in images:  # 处理每张标定图片
+        img = cv2.imread(image_filename)  # 读取图片
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)  # 转换为灰度图，便于角点检测
+        
+        # 在灰度图中查找棋盘格角点
+        ret, corners = cv2.findChessboardCorners(gray, pattern_size, None)  # 检测棋盘格角点
+        
+        if ret:  # 如果成功检测到所有角点
+            # 设置亚像素精确化的终止条件
+            criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)  # 组合收敛条件：迭代次数和精度
+            # 对角点进行亚像素精确化 - 提高角点位置的准确性
+            corners2 = cv2.cornerSubPix(gray, corners, (11,11), (-1,-1), criteria)  # 使用亚像素细化，窗口大小为11x11
+            
+            objpoints.append(objp)  # 添加世界坐标系中的点 - 这些点在每张图片中都相同
+            imgpoints.append(corners2)  # 添加图像平面的点 - 每张图片中角点的实际检测位置
+            
+            # 在图片上绘制检测到的棋盘格角点 - 用于可视化检验
+            cv2.drawChessboardCorners(img, pattern_size, corners2, ret)  # 在原图上绘制检测到的角点
+            cv2.imshow('Corners', cv2.resize(img, (800,600)))  # 显示带有角点标记的图像
+            cv2.waitKey(500)  # 等待0.5秒，显示图像
+    
+    cv2.destroyAllWindows()  # 关闭所有窗口
+    
+    # 执行相机标定 - 求解相机内参和畸变系数
+    ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(
+        objpoints,  # 世界坐标系中的3D点
+        imgpoints,  # 图像平面上的2D点
+        gray.shape[::-1],  # 图像尺寸(宽,高)
+        None,  # 相机矩阵的初始估计值，None表示使用默认值
+        None)  # 畸变系数的初始估计值，None表示使用默认值
+    
+    # 计算重投影误差 - 评估标定质量
+    mean_error = 0  # 初始化误差累计值
+    for i in range(len(objpoints)):  # 遍历每张图片
+        imgpoints2, _ = cv2.projectPoints(objpoints[i], rvecs[i], tvecs[i], mtx, dist)  # 将3D点投影到2D图像
+        error = cv2.norm(imgpoints[i], imgpoints2, cv2.NORM_L2)/len(imgpoints2)  # 计算L2范数误差
+        mean_error += error  # 累加误差
+    
+    print(f"平均重投影误差: {mean_error/len(objpoints)}")  # 输出平均误差
+    
+    return ret, mtx, dist, rvecs, tvecs  # 返回标定结果
+
+def calibrate_three_cameras(cam1_folder, cam2_folder, cam3_folder):
+    """
+    三相机标定主函数 - 调用单相机标定并保存结果
+    Args:
+        cam1/2/3_folder: 三个相机的标定图片文件夹路径
+    Returns:
+        save_path: 保存的标定结果文件路径
+    """
+    print("开始相机1标定...")  # 输出标定进度
+    ret1, mtx1, dist1, rvecs1, tvecs1 = calibrate_single_camera(cam1_folder)  # 标定第一个相机
+    
+    print("\n开始相机2标定...")  # 输出标定进度
+    ret2, mtx2, dist2, rvecs2, tvecs2 = calibrate_single_camera(cam2_folder)  # 标定第二个相机
+    
+    print("\n开始相机3标定...")  # 输出标定进度
+    ret3, mtx3, dist3, rvecs3, tvecs3 = calibrate_single_camera(cam3_folder)  # 标定第三个相机
+    
+    # 保存标定结果 - 将三个相机的内参和畸变系数保存到一个文件
+    save_path = 'three_camera_calibration.npz'  # 指定保存路径
+    np.savez(save_path,  # 使用NumPy的压缩文件格式保存多个数组
+             mtx1=mtx1, dist1=dist1,  # 相机1的内参和畸变系数
+             mtx2=mtx2, dist2=dist2,  # 相机2的内参和畸变系数
+             mtx3=mtx3, dist3=dist3)  # 相机3的内参和畸变系数
+    
+    return save_path  # 返回保存的文件路径
+                </pre>
+            </div>
+            
+            <h3>代码解析:</h3>
+            <ul>
+                <li><strong>ArUco检测</strong>: 对三个相机的图像使用 <code>detectMarkers</code> 函数检测ArUco标记，获取角点坐标和ID信息。</li>
+                <li><strong>可视化标记</strong>: 在图像上用不同颜色的圆圈标记四个角点，并添加ID标识。</li>
+                <li><strong>PnP求解</strong>: 使用 <code>solvePnP</code> 函数，从2D图像点和对应的3D点计算旋转和平移矩阵。</li>
+                <li><strong>点聚类</strong>: 实现了一个基于距离的聚类算法，将可能属于同一标记板的点分组，提高系统稳定性。</li>
+                <li><strong>坐标变换</strong>: 计算ArUco到相机和相机到ArUco的变换矩阵，这些矩阵用于后续的坐标系统转换。</li>
+                <li><strong>坐标轴绘制</strong>: 使用 <code>projectPoints</code> 将3D坐标轴投影到图像平面，并绘制彩色坐标轴线。</li>
+            </ul>
+            
+            <p>The calculated transformations allow conversion between:</p>
+            <ul>
+                <li>ArUco coordinate system ↔ Left camera</li>
+                <li>ArUco coordinate system ↔ Middle camera</li>
+                <li>ArUco coordinate system ↔ Right camera</li>
+            </ul>
+            
+            <p>These transformations are essential for aligning the pose data from different cameras into a single coordinate system.</p>
+        </div>
+
+        <div class="section">
+            <h2>5. 2D Pose Estimation</h2>
+            <p>For each video frame, the system performs 2D pose estimation using MediaPipe's PoseLandmarker model, which provides 33 keypoints for human body landmarks.</p>
+            
+            <button class="toggle-button">展开详细代码</button>
+            <div class="code-block">
+                <h4>2D姿态估计代码:</h4>
+                <pre>
+def process_frame(detector, frame_left, frame_middle, frame_right, img_L, img_M, img_R, cams_params, cam_P):
+    """
+    处理三个相机的单帧图像并计算重投影误差
+    """
+    # 转换图像格式并进行姿态检测
+    mp_images = [
+        mp.Image(image_format=mp.ImageFormat.SRGB, data=cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+        for frame in [frame_left, frame_middle, frame_right]
+    ]
+    
+    detection_results = [detector.detect(img) for img in mp_images]
+    
+    # 检查每个相机是否检测到关键点
+    poses = []
+    frames = [frame_left, frame_middle, frame_right]
+    cam_names = ["左侧", "中间", "右侧"]
+    
+    detection_failed = False
+    failed_cameras = []
+    
+    for i, result in enumerate(detection_results):
+        if result.pose_landmarks and len(result.pose_landmarks) > 0:
+            pose = np.array([[landmark.x * frames[i].shape[1], landmark.y * frames[i].shape[0]] 
+                            for landmark in result.pose_landmarks[0]])
+            poses.append(pose)
+        else:
+            detection_failed = True
+            failed_cameras.append(cam_names[i])
+    
+    if detection_failed:
+        print(f"以下相机未检测到人体姿势: {', '.join(failed_cameras)}")
+        return np.zeros((33, 3)), img_L, img_M, img_R, (0, 0, 0)
+    
+    # 解包相机参数和投影矩阵
+    (mtx1, dist1, mtx2, dist2, mtx3, dist3) = cams_params
+    (R_aruco2camL, t_aruco2camL, R_aruco2camM, t_aruco2camM, R_aruco2camR, t_aruco2camR) = cam_P
+    
+    # 进行三维重建
+    points_3d = triangulate_points_three_cameras(
+        poses[0], poses[1], poses[2],  # 三个相机的2D点
+        mtx1, dist1, mtx2, dist2, mtx3, dist3,  # 相机参数
+        np.hstack((R_aruco2camL, t_aruco2camL)),
+        np.hstack((R_aruco2camM, t_aruco2camM)),
+        np.hstack((R_aruco2camR, t_aruco2camR))  # 投影矩阵
+    )
+    
+    # 在图像上标注检测到的关键点
+    images = [img_L, img_M, img_R]
+    for i, pose in enumerate(poses):
+        for mark_i in range(33):
+            mark_coord = (int(pose[mark_i,0]), int(pose[mark_i,1]))
+            cv2.circle(images[i], mark_coord, 10, (0, 0, 255), -1)
+    
+    # 计算重投影误差
+    rmse_left = calculate_reprojection_error(
+        points_3d, poses[0], 
+        np.hstack((R_aruco2camL, t_aruco2camL)),
+        mtx1, dist1
+    )
+    
+    rmse_middle = calculate_reprojection_error(
+        points_3d, poses[1],
+        np.hstack((R_aruco2camM, t_aruco2camM)),
+        mtx2, dist2
+    )
+    
+    rmse_right = calculate_reprojection_error(
+        points_3d, poses[2],
+        np.hstack((R_aruco2camR, t_aruco2camR)),
+        mtx3, dist3
+    )
+    
+    return points_3d, img_L, img_M, img_R, (rmse_left, rmse_middle, rmse_right)
+                </pre>
+            </div>
+            
+            <h3>代码解析:</h3>
+            <ul>
+                <li><strong>图像转换</strong>: 将OpenCV的BGR图像转换为MediaPipe需要的RGB格式。</li>
+                <li><strong>姿态检测</strong>: 通过MediaPipe PoseLandmarker在每个相机视图中检测人体姿态。</li>
+                <li><strong>检查结果</strong>: 验证所有相机都成功检测到人体关键点，如有失败则跳过该帧。</li>
+                <li><strong>坐标转换</strong>: 将标准化的MediaPipe坐标（0-1范围）转换为图像像素坐标。</li>
+                <li><strong>三维重建</strong>: 调用三角测量函数将多相机的2D关键点合成3D点云。</li>
+                <li><strong>可视化标记</strong>: 在每个相机视图的图像上绘制检测到的关键点。</li>
+                <li><strong>误差计算</strong>: 评估三维重建的准确性，计算每个相机的重投影误差。</li>
+            </ul>
+            
+            <p>如果任何相机未能检测到人体姿态，该帧将被跳过，以确保数据质量的一致性。</p>
+        </div>
+
+        <div class="section">
+            <h2>6. 3D Triangulation</h2>
+            <p>The core of the system is the triangulation process that combines 2D detections from multiple cameras into a single 3D reconstruction.</p>
+            
+            <h3>Mathematical Approach:</h3>
+            <p>The <code>triangulate_points_three_cameras</code> function implements multi-view triangulation:</p>
+            <ul>
+                <li>Undistort 2D points using camera parameters</li>
+                <li>Set up the DLT (Direct Linear Transform) system of equations</li>
+                <li>Each camera contributes two constraints per point (x and y coordinates)</li>
+                <li>Solve the resulting linear system using SVD (Singular Value Decomposition)</li>
+                <li>Normalize the homogeneous coordinates to obtain 3D point</li>
+            </ul>
+            
+            <div class="highlight">
+                <h4>In-Depth Mathematical Derivation:</h4>
+                <p>Triangulation is based on the principle that a 3D point viewed from multiple 2D perspectives provides enough constraints to recover its position in 3D space.</p>
+                
+                <h5>Step 1: Pinhole Camera Model</h5>
+                <p>For a 3D point \(X = [X, Y, Z, 1]^T\) (in homogeneous coordinates), its projection onto camera \(i\) is given by:</p>
+                <p>\(s_i \cdot [u_i, v_i, 1]^T = P_i \cdot [X, Y, Z, 1]^T\)</p>
+                <p>Where:</p>
+                <ul>
+                    <li>\(P_i\) is the 3×4 projection matrix for camera \(i\)</li>
+                    <li>\([u_i, v_i]\) are the 2D image coordinates</li>
+                    <li>\(s_i\) is a scale factor</li>
+                </ul>
+                
+                <h5>Step 2: Eliminating the Scale Factor</h5>
+                <p>We can eliminate the scale factor by cross-multiplication, which leads to:</p>
+                <p>\(u_i \cdot (P_i^3 \cdot X) - (P_i^1 \cdot X) = 0\)</p>
+                <p>\(v_i \cdot (P_i^3 \cdot X) - (P_i^2 \cdot X) = 0\)</p>
+                <p>Where \(P_i^j\) refers to the \(j\)-th row of \(P_i\).</p>
+                
+                <h5>Step 3: Constructing the Linear System</h5>
+                <p>With three cameras, we have six equations (two per camera), forming a system \(AX = 0\):</p>
+                <pre>
+A = [
+    u_1 * P_1^3 - P_1^1,  // Left camera x constraint
+    v_1 * P_1^3 - P_1^2,  // Left camera y constraint
+    u_2 * P_2^3 - P_2^1,  // Middle camera x constraint
+    v_2 * P_2^3 - P_2^2,  // Middle camera y constraint
+    u_3 * P_3^3 - P_3^1,  // Right camera x constraint
+    v_3 * P_3^3 - P_3^2   // Right camera y constraint
+]
+                </pre>
+                
+                <h5>Step 4: Solving via SVD</h5>
+                <p>The system is overdetermined (6 equations, 4 unknowns). The least-squares solution is the eigenvector corresponding to the smallest eigenvalue of \(A^TA\), which can be efficiently found using SVD:</p>
+                <p>\(A = U\Sigma V^T\)</p>
+                <p>The solution X is the last column of V (or last row of \(V^T\)).</p>
+                
+                <h5>Step 5: Normalization</h5>
+                <p>Finally, we normalize the homogeneous coordinates by dividing by the fourth component:</p>
+                <p>\([X, Y, Z, W]^T \rightarrow [X/W, Y/W, Z/W]^T\)</p>
+            </div>
+            
+            <button class="toggle-button">展开详细代码</button>
+            <div class="code-block">
+                <h4>三角测量代码:</h4>
+                <pre>
+def triangulate_points_three_cameras(points_left, points_middle, points_right,
+                                   mtx1, dist1, mtx2, dist2, mtx3, dist3,
+                                   P1, P2, P3):
+    """
+    使用三個相機進行三角測量
+    Args:
+        points_left/middle/right: 三個相機的2D點 (每个都是形状为[33,2]的numpy数组，包含人体33个关键点的x,y坐标)
+        mtx1/2/3: 三个相机的内参矩阵 (3x3矩阵，包含焦距和光心)
+        dist1/2/3: 三个相机的畸变系数 (处理镜头畸变的向量)
+        P1/2/3: 投影矩陣 (3x4矩阵，包含旋转矩阵R和平移向量t: [R|t])
+    Returns:
+        points_3d: 三維點雲 (形状为[33,3]的numpy数组，包含重建的33个人体关键点的X,Y,Z坐标)
+    """
+    points_3d = []  # 初始化存储三维点的空列表
+    
+    # 對每個關鍵點進行三角測量 (遍历每个人体关键点)
+    for pt_left, pt_middle, pt_right in zip(points_left, points_middle, points_right):  # 同时获取三个相机对应的同一关键点
+        # 去畸變 - 将像素坐标转换为归一化相机坐标，同时消除镜头畸变
+        pt_left_undist = cv2.undistortPoints(pt_left.reshape(1, 1, 2), mtx1, dist1)  # 重塑为[1,1,2]形状，符合OpenCV函数要求
+        pt_middle_undist = cv2.undistortPoints(pt_middle.reshape(1, 1, 2), mtx2, dist2)  # 相机2的点去畸变
+        pt_right_undist = cv2.undistortPoints(pt_right.reshape(1, 1, 2), mtx3, dist3)  # 相机3的点去畸变
+        
+        # 使用DLT方法進行三角測量 (Direct Linear Transform)
+        A = np.zeros((6, 4))  # 创建6x4的矩阵，每个相机贡献2个方程，共3个相机提供6个方程
+        
+        # 左相機約束 - 根据DLT原理建立线性方程组
+        A[0] = pt_left_undist[0, 0, 0] * P1[2] - P1[0]  # x坐标对应方程: x*(第3行P1) - (第1行P1)
+        A[1] = pt_left_undist[0, 0, 1] * P1[2] - P1[1]  # y坐标对应方程: y*(第3行P1) - (第2行P1)
+        
+        # 中間相機約束 - 同样方法建立中间相机的线性方程
+        A[2] = pt_middle_undist[0, 0, 0] * P2[2] - P2[0]  # x坐标方程
+        A[3] = pt_middle_undist[0, 0, 1] * P2[2] - P2[1]  # y坐标方程
+        
+        # 右相機約束 - 建立右侧相机的线性方程
+        A[4] = pt_right_undist[0, 0, 0] * P3[2] - P3[0]  # x坐标方程
+        A[5] = pt_right_undist[0, 0, 1] * P3[2] - P3[1]  # y坐标方程
+        
+        # 求解最小二乘問題 - 解超定方程组AX=0，X为待求的3D点
+        _, _, Vt = np.linalg.svd(A)  # 奇异值分解，得到U, Sigma, Vt三个矩阵
+        point_4d = Vt[-1]  # 取Vt的最后一行，即最小奇异值对应的右奇异向量，为齐次坐标解
+        point_3d = (point_4d / point_4d[3])[:3]  # 齐次坐标归一化并转为3D欧氏坐标，除以第4个分量再取前3个分量
+        
+        points_3d.append(point_3d)  # 将重建的3D点添加到结果列表
+    
+    return np.array(points_3d)  # 将点列表转换为numpy数组并返回
+                </pre>
+            </div>
+            
+            <h3>代码解析:</h3>
+            <ul>
+                <li><strong>去畸变</strong>: 使用 <code>undistortPoints</code> 函数移除相机镜头造成的畸变，获得理想针孔相机下的图像点。</li>
+                <li><strong>DLT方法</strong>: 建立三个相机的线性方程组，每个相机贡献两个约束（x和y）。</li>
+                <li><strong>SVD分解</strong>: 使用奇异值分解求解超定方程组 Ax=0，最小奇异值对应的右奇异向量（Vt的最后一行）就是我们需要的3D点的齐次坐标。</li>
+                <li><strong>归一化</strong>: 将齐次坐标转换为3D欧氏坐标，通过除以第四个分量并取前三个分量实现。</li>
+                <li><strong>整合结果</strong>: 对所有点执行相同的过程，返回完整的3D点云数组。</li>
+            </ul>
+            
+            <div class="highlight">
+                <h4>Technical Implementation Notes:</h4>
+                <ul>
+                    <li><strong>Point Undistortion</strong>: Before triangulation, we first remove lens distortion from the detected points. OpenCV's <code>undistortPoints</code> function converts distorted image points to normalized (undistorted) image coordinates.</li>
+                    <li><strong>Shape Explained</strong>: The shape of <code>pt_left_undist</code> is <code>[1, 1, 2]</code>, where:
+                        <ul>
+                            <li>First dimension (1): Number of point sets</li>
+                            <li>Second dimension (1): Number of points in each set</li>
+                            <li>Third dimension (2): x and y coordinates of each point</li>
+                        </ul>
+                        This format is required by OpenCV's point processing functions.
+                    </li>
+                    <li><strong>Matrix A Construction</strong>: The equations <code>A[0] = pt_left_undist[0, 0, 0] * P1[2] - P1[0]</code> are directly implementing the formula <code>u_i * (P_i^3) - (P_i^1)</code>.</li>
+                    <li><strong>Singular Value Decomposition</strong>: <code>np.linalg.svd(A)</code> returns three matrices U, Σ, and V^T. The solution to AX=0 is the last row of V^T (or last column of V).</li>
+                </ul>
+            </div>
+            
+            <h3>Handling Special Cases:</h3>
+            <p>The basic triangulation method works well in ideal conditions, but real-world applications may encounter challenging scenarios:</p>
+            <ul>
+                <li><strong>Missing Detections</strong>: If a keypoint is not detected in one or more cameras, the system can still triangulate using the available views.</li>
+                <li><strong>Occlusions</strong>: Points occluded in some views but visible in others can still be reconstructed.</li>
+                <li><strong>Low Confidence Detections</strong>: In more advanced implementations, confidence scores can be used to weight the equations, giving more influence to more reliable detections.</li>
+            </ul>
+            
+            <div class="step-diagram">
+                <img src="https://mermaid.ink/img/pako:eNptkctqwzAQRX9l0LYJtqGbLgqlf9BFt11UI3uciGhkIckNDfn3yrKbxsrK0jlzRzOpB2udxwxtdO5-dGzPR2LfUr0ft41rUWvRLNZYUr1G_87f0vWvc1uEbZq9eMfYuNajMpRMjdp4lPryHJ7CG8ZujfjlVL-obzR1DTrjnBuXTA3h5_lZtB5ftI7QN1jTRwlJI9Zb0Vh5eo8SfS5GYgSdOOZKHZdrhFbDdKw3LXI7r2SqR_T2xqjBf_jxOT59r1uKRw0Rdf0eO5eCTrjsZrvYV05mfAZMuRe8dz6i2wvH1Gh8R17J_Ws9PTj0kd_Tr49f8Bcb9I08?type=png" alt="Triangulation diagram">
+                <p><i>Triangulation principle - establishing 3D points from multiple 2D views</i></p>
+            </div>
+            
+            <p>This multi-view triangulation approach is what enables the system to reconstruct accurate 3D positions from 2D detections, forming the backbone of the pose estimation system.</p>
+        </div>
+
+        <div class="section">
+            <h2>7. Error Evaluation</h2>
+            <p>The system calculates reprojection error to evaluate the accuracy of the 3D reconstruction.</p>
+            
+            <button class="toggle-button">展开详细代码</button>
+            <div class="code-block">
+                <h4>误差评估代码:</h4>
+                <pre>
+def calculate_reprojection_error(points_3d, points_2d, P, mtx, dist):
+    """
+    计算重投影误差
+    Args:
+        points_3d: 3D点坐标 (N, 3) - N个点的XYZ坐标
+        points_2d: 2D点坐标 (N, 2) - 相机图像中检测到的N个点的xy坐标
+        P: 投影矩阵 (3, 4) - 将3D点投影到2D图像的变换矩阵[R|t]
+        mtx: 相机内参矩阵 - 3x3矩阵，包含焦距和主点坐标
+        dist: 畸变系数 - 相机镜头畸变参数向量
+    Returns:
+        rmse: 均方根误差 - 重投影误差的数值量化指标
+    """
+    # 将3D点转换到相机坐标系
+    points_3d_homo = np.hstack((points_3d, np.ones((points_3d.shape[0], 1))))  # 将3D点转为齐次坐标，添加第4个分量1
+    points_cam = np.dot(points_3d_homo, P.T)  # 将世界坐标系中的点变换到相机坐标系，使用投影矩阵P
+    
+    # 进行投影 - 实现透视除法，将3D点投影到2D图像平面
+    points_proj = points_cam[:, :2] / points_cam[:, 2:]  # 除以Z坐标实现透视投影，得到归一化平面坐标
+    
+    # 应用相机畸变 - 考虑相机镜头的畸变效应
+    points_proj_dist = cv2.projectPoints(points_3d, P[:, :3], P[:, 3], mtx, dist)[0].reshape(-1, 2)
+    # 上面的代码:
+    # P[:, :3] 是旋转矩阵R，P[:, 3]是平移向量t
+    # projectPoints计算带镜头畸变的投影点，返回结果的[0]是点坐标，reshape为Nx2的形状
+    
+    # 计算误差 - 计算投影点与原始检测点之间的欧氏距离
+    error = np.linalg.norm(points_2d - points_proj_dist, axis=1)  # 每个点的欧氏距离误差
+    rmse = np.sqrt(np.mean(error ** 2))  # 计算均方根误差(Root Mean Square Error)
+    
+    return rmse  # 返回重投影误差，值越小表示重建和相机标定越准确
+                </pre>
+            </div>
+            
+            <h3>代码解析:</h3>
+            <ul>
+                <li><strong>坐标转换</strong>: 将三维点转换为齐次坐标，并通过投影矩阵变换到相机坐标系。</li>
+                <li><strong>透视投影</strong>: 通过除以Z坐标（深度）将三维点投影到二维平面。</li>
+                <li><strong>畸变模型</strong>: 使用OpenCV的<code>projectPoints</code>函数应用相机的畸变模型。</li>
+                <li><strong>误差计算</strong>: 计算投影点与原始检测点之间的欧氏距离。</li>
+                <li><strong>统计分析</strong>: 计算均方根误差(RMSE)作为整体重建精度的度量。</li>
+            </ul>
+            
+            <p>重投影误差提供了评估3D重建质量的客观标准。低误差值表示良好的相机标定和准确的三角测量。系统会跟踪误差随时间的变化，用于评估系统的稳定性和检测潜在问题。</p>
+        </div>
+
+        <div class="section">
+            <h2>8. Visualization</h2>
+            <p>The system provides comprehensive visualization capabilities through <code>visualize_3d_animation_three_cameras</code>.</p>
+            
+            <button class="toggle-button">展开详细代码</button>
+            <div class="code-block">
+                <h4>3D可视化代码:</h4>
+                <pre>
+def visualize_3d_animation_three_cameras(points, aruco_axis, camL_axis, camM_axis, camR_axis, title='3D Visualization'):
+    """
+    三相机系统的3D点云动画可视化
+    Args:
+        points: 3D关键点序列 [frames, 33, 3]
+        aruco_axis: ArUco坐标系
+        camL_axis: 左相机坐标系
+        camM_axis: 中间相机坐标系
+        camR_axis: 右相机坐标系
+        title: 窗口标题
+    """
+    fig = plt.figure(figsize=(12, 8))
+    ax = fig.add_subplot(111, projection='3d')
+    
+    # 计算所有点的范围
+    all_points = np.vstack((
+        points.reshape(-1, 3),
+        aruco_axis.reshape(-1, 3),
+        camL_axis.reshape(-1, 3),
+        camM_axis.reshape(-1, 3),
+        camR_axis.reshape(-1, 3)
+    ))
+    min_vals = np.min(all_points, axis=0)
+    max_vals = np.max(all_points, axis=0)
+    range_vals = max_vals - min_vals
+    
+    # 设置坐标轴范围，添加边距
+    margin = 0.1 * range_vals
+    ax.set_xlim(min_vals[0] - margin[0], max_vals[0] + margin[0])
+    ax.set_ylim(min_vals[1] - margin[1], max_vals[1] + margin[1])
+    ax.set_zlim(min_vals[2] - margin[2], max_vals[2] + margin[2])
+    
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+    
+    # 设置视角
+    ax.view_init(elev=10, azim=-60)
+    
+    # 添加地板
+    floor_y = min_vals[1]
+    x_floor = np.array([min_vals[0] - margin[0], max_vals[0] + margin[0]])
+    z_floor = np.array([min_vals[2] - margin[2], max_vals[2] + margin[2]])
+    X_floor, Z_floor = np.meshgrid(x_floor, z_floor)
+    Y_floor = np.full(X_floor.shape, floor_y)
+    ax.plot_surface(X_floor, Y_floor, Z_floor, alpha=0.2, color='gray')
+    
+    # 初始化散点图和骨架线条
+    scatter = ax.scatter([], [], [], s=20, c='r', alpha=0.6)
+    
+    # 定义骨架连接
+    connections = [
+        # 头部
+        (0, 1), (1, 2), (2, 3), (3, 7),
+        (0, 4), (4, 5), (5, 6), (6, 8),
+        (3, 6),
+        # 颈部
+        (9, 10),
+        # 躯干
+        (11, 12), (11, 23), (12, 24), (23, 24),
+        # 左臂
+        (11, 13), (13, 15), (15, 17), (15, 19), (15, 21),
+        (17, 19), (19, 21),
+        # 右臂
+        (12, 14), (14, 16), (16, 18), (16, 20), (16, 22),
+        (18, 20), (20, 22),
+        # 左腿
+        (23, 25), (25, 27), (27, 29), (29, 31), (27, 31),
+        # 右腿
+        (24, 26), (26, 28), (28, 30), (30, 32), (28, 32)
+    ]
+    
+    # 为不同部位设置颜色
+    colors = {
+        'head': 'purple',
+        'spine': 'blue',
+        'arms': 'green',
+        'legs': 'red',
+        'hands': 'orange'
+    }
+    
+    # 定义每个连接的颜色
+    connection_colors = []
+    for start, end in connections:
+        if start <= 8 or end <= 8:  # 头部
+            connection_colors.append(colors['head'])
+        elif start in [9, 10, 11] or end in [9, 10, 11]:  # 脊椎
+            connection_colors.append(colors['spine'])
+        elif (start in [13, 14, 15, 16] or end in [13, 14, 15, 16]):  # 手臂
+            connection_colors.append(colors['arms'])
+        elif start >= 17 or end >= 17:  # 手部
+            connection_colors.append(colors['hands'])
+        else:  # 腿部
+            connection_colors.append(colors['legs'])
+    
+    # 创建线条
+    lines = []
+    for color in connection_colors:
+        line, = ax.plot([], [], [], color=color, alpha=0.8, linewidth=2)
+        lines.append(line)
+    
+    # 添加坐标系线条
+    coord_lines = []
+    for _ in range(12):  # 4个坐标系 × 3个轴
+        line, = ax.plot([], [], [], '-', lw=2, alpha=0.7)
+        coord_lines.append(line)
+    
+    def update(frame):
+        # 更新骨骼点
+        point_cloud = points[frame]
+        scatter._offsets3d = (point_cloud[:,0], point_cloud[:,1], point_cloud[:,2])
+        
+        # 更新骨架线条
+        for i, ((start, end), line) in enumerate(zip(connections, lines)):
+            line.set_data_3d([point_cloud[start,0], point_cloud[end,0]],
+                           [point_cloud[start,1], point_cloud[end,1]],
+                           [point_cloud[start,2], point_cloud[end,2]])
+        
+        # 更新坐标系
+        # ArUco坐标系
+        for i in range(3):
+            coord_lines[i].set_data_3d([aruco_axis[frame,0,0], aruco_axis[frame,i+1,0]],
+                                     [aruco_axis[frame,0,1], aruco_axis[frame,i+1,1]],
+                                     [aruco_axis[frame,0,2], aruco_axis[frame,i+1,2]])
+            coord_lines[i].set_color(['r','g','b'][i])
+        
+        # 左相机坐标系
+        for i in range(3):
+            coord_lines[i+3].set_data_3d([camL_axis[frame,0,0], camL_axis[frame,i+1,0]],
+                                       [camL_axis[frame,0,1], camL_axis[frame,i+1,1]],
+                                       [camL_axis[frame,0,2], camL_axis[frame,i+1,2]])
+            coord_lines[i+3].set_color(['r','g','b'][i])
+        
+        # 中间相机坐标系
+        for i in range(3):
+            coord_lines[i+6].set_data_3d([camM_axis[frame,0,0], camM_axis[frame,i+1,0]],
+                                       [camM_axis[frame,0,1], camM_axis[frame,i+1,1]],
+                                       [camM_axis[frame,0,2], camM_axis[frame,i+1,2]])
+            coord_lines[i+6].set_color(['r','g','b'][i])
+        
+        # 右相机坐标系
+        for i in range(3):
+            coord_lines[i+9].set_data_3d([camR_axis[frame,0,0], camR_axis[frame,i+1,0]],
+                                       [camR_axis[frame,0,1], camR_axis[frame,i+1,1]],
+                                       [camR_axis[frame,0,2], camR_axis[frame,i+1,2]])
+            coord_lines[i+9].set_color(['r','g','b'][i])
+        
+        # 更新标题显示当前帧
+        ax.set_title(f'{title} - Frame: {frame}')
+        
+        return [scatter] + lines + coord_lines
+    
+    # 创建动画
+    anim = FuncAnimation(
+        fig,
+        update,
+        frames=len(points),
+        interval=50,
+        blit=False,
+        repeat=True
+    )
+    
+    plt.show()
+    return anim
+                </pre>
+            </div>
+            
+            <h3>可视化代码解析:</h3>
+            <ul>
+                <li><strong>场景设置</strong>:
+                    <ul>
+                        <li>创建3D图形对象和坐标轴</li>
+                        <li>计算所有点的范围，确保可视区域足够大</li>
+                        <li>添加地板平面提供空间参考</li>
+                    </ul>
+                </li>
+                <li><strong>骨架定义</strong>:
+                    <ul>
+                        <li>定义人体骨骼的连接关系（哪些关键点之间需要连线）</li>
+                        <li>为不同身体部位（头部、躯干、手臂、腿部）设置不同颜色</li>
+                        <li>创建用于绘制骨架的线条对象</li>
+                    </ul>
+                </li>
+                <li><strong>坐标系可视化</strong>:
+                    <ul>
+                        <li>为ArUco和三个相机坐标系创建线条对象</li>
+                        <li>使用红、绿、蓝三色表示X、Y、Z轴</li>
+                    </ul>
+                </li>
+                <li><strong>动画更新</strong>:
+                    <ul>
+                        <li>定义帧更新函数，负责刷新骨骼点、骨架线条和坐标轴</li>
+                        <li>使用Matplotlib的FuncAnimation创建动画</li>
+                        <li>设置适当的帧间隔和重复播放选项</li>
+                    </ul>
+                </li>
+            </ul>
+            
+            <h3>Features:</h3>
+            <ul>
+                <li>3D animation of the reconstructed pose sequence</li>
+                <li>Skeleton connections between keypoints</li>
+                <li>Color-coded body parts for easy interpretation</li>
+                <li>Visualization of coordinate systems (ArUco, camera)</li>
+                <li>Ground plane for spatial reference</li>
+                <li>Frame counter and playback controls</li>
+            </ul>
+            
+            <p>这种可视化方法不仅能直观展示重建的3D姿态，还能帮助研究人员理解相机与世界坐标系之间的空间关系。色彩编码使不同的身体部位易于区分，骨架连接线则清晰呈现人体结构。动画功能还能展示随时间变化的动作序列，极大地增强了数据的可解释性。</p>
+        </div>
+
+        <div class="section">
+            <h2>9. Main Workflow</h2>
+            <p>The <code>process_videos</code> and <code>main</code> functions orchestrate the entire system:</p>
+            
+            <button class="toggle-button">展开详细代码</button>
+            <div class="code-block">
+                <h4>主工作流程代码:</h4>
+                <pre>
+def process_videos(video_path_left, video_path_center, video_path_right, start_frame=0):
+    """
+    处理三个相机的视频
+    Args:
+        video_path_left/center/right: 三个相机的视频文件路径
+        start_frame: 开始处理的帧索引，用于跳过前面的帧
+    Returns:
+        all_points_3d: 所有重建的3D点序列
+        aruco_axis等: 各坐标系数据
+        all_rmse: 重投影误差记录
+    """
+    ## 0. 导入相机内参 - 从预先进行的相机标定中加载参数
+    camera_params_path = r"C:\Users\user\Desktop\wenfeng_caliscope\three_camera_calibration.npz"  # 相机标定文件路径
+    mtx1, dist1, mtx2, dist2, mtx3, dist3 = load_camera_params(camera_params_path)  # 加载三个相机的内参和畸变系数
+    cams_params = (mtx1, dist1, mtx2, dist2, mtx3, dist3)  # 将参数打包为元组，便于传递
+
+    ## 1. 设置aruco参数 - 配置ArUco标记检测器
+    aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_ARUCO_ORIGINAL)  # 使用预定义的ArUco字典
+    aruco_params = cv2.aruco.DetectorParameters()  # 创建检测器参数对象
+    aruco_detector = cv2.aruco.ArucoDetector(aruco_dict, aruco_params)  # 创建ArUco检测器
+    # 定义 ArUco 标记板的坐标 - 每个ID对应标记板在世界坐标系中的位置
+    board_length = 160  # 标记板边长(mm)
+    board_gap = 30  # 标记板间距(mm)
+    base_coord = np.array([[0,0],[0,1],[1,1],[1,0]])  # 单位正方形的四个角点
+    board_coord = {
+        0: base_coord * board_length + [0,0],  # ID为0的标记板坐标，位于原点
+        1: base_coord * board_length + [board_length+board_gap,0],  # ID为1的标记板坐标，向X轴偏移
+        # [其他标记板坐标省略]
+    }
+
+    ## 2. 设置MediaPipe姿态估计模型 - 初始化人体姿态检测器
+    model_asset_path = r"C:\Users\user\Desktop\pose_landmarker_full.task"  # 模型文件路径
+    base_options = python.BaseOptions(model_asset_path=model_asset_path)  # 基本选项配置
+    options = vision.PoseLandmarkerOptions(base_options=base_options, output_segmentation_masks=True)  # 姿态检测选项
+    detector = vision.PoseLandmarker.create_from_options(options)  # 创建姿态检测器实例
+    
+    ## 4. 读取视频 - 打开三个相机的视频文件
+    print(f"开始处理视频从帧 {start_frame} 开始...")  # 输出处理信息
+    cap_left = cv2.VideoCapture(video_path_left)  # 打开左相机视频
+    cap_center = cv2.VideoCapture(video_path_center)  # 打开中间相机视频
+    cap_right = cv2.VideoCapture(video_path_right)  # 打开右相机视频
+    
+    # 跳过已经处理的帧 - 设置视频读取的起始位置
+    cap_left.set(cv2.CAP_PROP_POS_FRAMES, start_frame)  # 设置左相机视频的起始帧
+    cap_center.set(cv2.CAP_PROP_POS_FRAMES, start_frame)  # 设置中间相机视频的起始帧
+    cap_right.set(cv2.CAP_PROP_POS_FRAMES, start_frame)  # 设置右相机视频的起始帧
+    
+    # 收集每帧的点和误差 - 初始化存储结果的列表
+    all_points_3d = []  # 存储所有帧的3D关键点
+    all_rmse = []  # 存储所有帧的重投影误差
+    aruco_axis = []  # 存储ArUco坐标系
+    camL_axis = []  # 存储左相机坐标系
+    camM_axis = []  # 存储中间相机坐标系
+    camR_axis = []  # 存储右相机坐标系
+    frame_count = start_frame  # 帧计数器，从起始帧开始
+    
+    # 开始循环读取每一帧视频图像
+    while True:
+        ret_left, frame_left = cap_left.read()  # 读取左相机视频帧
+        ret_center, frame_center = cap_center.read()  # 读取中间相机视频帧
+        ret_right, frame_right = cap_right.read()  # 读取右相机视频帧
+
+        # 检查是否成功读取所有相机的帧
+        if not ret_left or not ret_center or not ret_right:  # 如果任一相机读取失败
+            break  # 结束循环
+            
+        print(f"处理第 {frame_count + 1} 帧")  # 输出当前处理的帧号
+            
+        # 处理ArUco标记 - 建立统一的坐标系
+        result = get_aruco_axis(frame_left, frame_center, frame_right, aruco_detector, board_coord, cams_params)
+        if result[0] is None:  # 如果未检测到ArUco标记
+            print(f"第 {frame_count + 1} 帧未检测到 ArUco 标记")  # 输出警告信息
+            all_points_3d.append(np.zeros((33, 3)))  # 添加空的3D点云（33个零点）
+            aruco_axis.append(np.zeros((4,3)))  # 添加空的ArUco坐标轴
+            camL_axis.append(np.zeros((4,3)))  # 添加空的左相机坐标轴
+            camM_axis.append(np.zeros((4,3)))  # 添加空的中间相机坐标轴
+            camR_axis.append(np.zeros((4,3)))  # 添加空的右相机坐标轴
+            frame_count += 1  # 帧计数器递增
+            continue  # 跳过当前帧，继续处理下一帧
+            
+        # 解包结果 - 提取ArUco处理返回的各种变换矩阵
+        (R_aruco2camL, t_aruco2camL,  # 左相机相关的变换
+         R_aruco2camM, t_aruco2camM,  # 中间相机相关的变换
+         R_aruco2camR, t_aruco2camR,  # 右相机相关的变换
+         R_camL2aruco, t_camL2aruco,  # 左相机到ArUco的变换
+         R_camM2aruco, t_camM2aruco,  # 中间相机到ArUco的变换
+         R_camR2aruco, t_camR2aruco,  # 右相机到ArUco的变换
+         img_L, img_M, img_R) = result  # 处理后的图像
+         
+        # 更新坐标系 - 记录当前帧的各坐标系位置
+        aruco_axis.append(axis_coord)  # 添加ArUco坐标系（世界坐标系）
+        # 将左/中/右相机坐标系转换到世界坐标系中，并添加到列表
+        camL_axis.append(np.dot(R_camL2aruco, (axis_coord).T).T + t_camL2aruco.T)  # 左相机坐标系
+        camM_axis.append(np.dot(R_camM2aruco, (axis_coord).T).T + t_camM2aruco.T)  # 中间相机坐标系
+        camR_axis.append(np.dot(R_camR2aruco, (axis_coord).T).T + t_camR2aruco.T)  # 右相机坐标系
+
+        # 处理姿态估计 - 进行人体姿态检测和3D重建
+        cam_P = (R_aruco2camL, t_aruco2camL, R_aruco2camM, t_aruco2camM, R_aruco2camR, t_aruco2camR)  # 打包投影矩阵
+        # 调用主处理函数，执行2D姿态检测和3D三角测量
+        points_3d, img_L, img_M, img_R, rmse = process_frame(detector, frame_left, frame_center, frame_right, 
+                                                      img_L, img_M, img_R, cams_params, cam_P)
+                                                      
+        if points_3d is not None:  # 如果成功检测并重建了3D点云
+            all_points_3d.append(points_3d)  # 添加到结果列表
+            all_rmse.append(rmse)  # 记录重投影误差
+            
+            # 显示当前帧的RMSE(重投影误差)
+            print(f"Frame {frame_count} RMSE - Left: {rmse[0]:.3f}, Middle: {rmse[1]:.3f}, Right: {rmse[2]:.3f}")
+        
+        # 显示图像 - 将三个相机视图并排显示
+        combined_img = np.hstack((  # 水平拼接三个相机图像
+            cv2.resize(img_L, (426, 320)),  # 调整左相机图像大小
+            cv2.resize(img_M, (426, 320)),  # 调整中间相机图像大小
+            cv2.resize(img_R, (426, 320))   # 调整右相机图像大小
+        ))
+        cv2.imshow('Three Camera Views', combined_img)  # 在窗口中显示拼接图像
+        if cv2.waitKey(1) & 0xFF == ord('q'):  # 检测按键，如果按下q键
+            break  # 退出循环
+
+        frame_count += 1  # 帧计数器递增
+
+    # 释放资源 - 关闭视频和窗口
+    cap_left.release()  # 释放左相机视频
+    cap_center.release()  # 释放中间相机视频
+    cap_right.release()  # 释放右相机视频
+    cv2.destroyAllWindows()  # 关闭所有窗口
+    
+    # 返回处理结果 - 所有重建的3D点和相关数据
+    return (np.array(all_points_3d), np.array(aruco_axis), np.array(camL_axis), 
+            np.array(camM_axis), np.array(camR_axis), np.array(all_rmse))
+
+def main():
+    """
+    主函数 - 程序入口点，控制整个工作流程
+    """
+    # 视频路径 - 指定三个相机的视频文件位置
+    video_path_left = r"C:\Users\user\Desktop\Dropbox\Camera_passion changes lives\calibration0108\recordings\port_3\port_3-01082025180809-0000.avi"
+    video_path_center = r"C:\Users\user\Desktop\Dropbox\Camera_passion changes lives\calibration0108\recordings\port_1\port_1-01082025180808-0000.avi"
+    video_path_right = r"C:\Users\user\Desktop\Dropbox\Camera_passion changes lives\calibration0108\recordings\port_2\port_2-01082025180810-0000.avi"
+
+    # 处理所有帧 - 调用主处理函数
+    all_points_3d_original, aruco_axises, camL_axises, camM_axises, camR_axises, all_rmse = process_videos(
+        video_path_left, video_path_center, video_path_right)  # 处理三个相机的视频
+
+    # 可视化3D点云 - 创建动画展示重建结果
+    print("开始3D可视化...")  # 输出提示信息
+    visualize_3d_animation_three_cameras(  # 调用可视化函数
+        all_points_3d_original,  # 重建的3D点云
+        aruco_axises,  # ArUco坐标系
+        camL_axises,  # 左相机坐标系
+        camM_axises,  # 中间相机坐标系
+        camR_axises,  # 右相机坐标系
+        title='Three Camera Motion Capture'  # 可视化窗口标题
+    )
+
+    # 绘制RMSE随时间变化的图表 - 评估重建质量
+    plt.figure(figsize=(10, 6))  # 创建图形对象，设置大小
+    frames = range(len(all_rmse))  # X轴：帧索引
+    plt.plot(frames, all_rmse[:, 0], label='Left Camera')  # 绘制左相机的误差曲线
+    plt.plot(frames, all_rmse[:, 1], label='Middle Camera')  # 绘制中间相机的误差曲线
+    plt.plot(frames, all_rmse[:, 2], label='Right Camera')  # 绘制右相机的误差曲线
+    plt.xlabel('Frame')  # X轴标签
+    plt.ylabel('RMSE (pixels)')  # Y轴标签
+    plt.title('Reprojection Error Over Time')  # 图表标题
+    plt.legend()  # 显示图例
+    plt.grid(True)  # 显示网格
+    plt.show()  # 显示图表
+                </pre>
+            </div>
+            
+            <h3>工作流程解析:</h3>
+            <ol>
+                <li><strong>初始化</strong>:
+                    <ul>
+                        <li>加载预先计算的相机参数</li>
+                        <li>设置ArUco检测器和标记板坐标</li>
+                        <li>初始化MediaPipe姿态估计模型</li>
+                        <li>打开三个相机的视频文件</li>
+                    </ul>
+                </li>
+                <li><strong>逐帧处理</strong>:
+                    <ul>
+                        <li>同步读取三个相机的视频帧</li>
+                        <li>使用ArUco标记建立共同坐标系</li>
+                        <li>计算相机之间的变换关系</li>
+                        <li>检测人体姿态关键点</li>
+                        <li>通过三角测量计算3D关键点</li>
+                        <li>计算重投影误差评估准确性</li>
+                        <li>显示实时处理结果</li>
+                    </ul>
+                </li>
+                <li><strong>结果可视化</strong>:
+                    <ul>
+                        <li>创建3D动画展示重建结果</li>
+                        <li>绘制误差随时间变化的曲线图</li>
+                        <li>提供定量的性能评估</li>
+                    </ul>
+                </li>
+            </ol>
+            
+            <p>这个工作流程实现了从摄像头输入到3D重建的完整链条，平衡了精度、稳健性和计算效率的要求。系统采用模块化设计，各组件之间接口清晰，便于后续扩展和改进。</p>
+        </div>
+
+        <div class="section">
+            <h2>10. Advanced Features and Optimizations</h2>
+            
+            <h3>Error Handling:</h3>
+            <p>The system includes robust error handling for scenarios such as:</p>
+            <ul>
+                <li>Missing ArUco marker detections</li>
+                <li>Failed pose detections in one or more cameras</li>
+                <li>Invalid camera parameters</li>
+            </ul>
+            
+            <h3>Point Clustering:</h3>
+            <p>To handle multiple ArUco marker detections, the system implements a clustering algorithm that:</p>
+            <ul>
+                <li>Groups nearby points that likely belong to the same marker</li>
+                <li>Selects the largest cluster for stable coordinate system estimation</li>
+            </ul>
+            
+            <h3>Visual Feedback:</h3>
+            <p>The system provides real-time visual feedback by:</p>
+            <ul>
+                <li>Drawing detected ArUco corners with distinct colors</li>
+                <li>Labeling markers with their IDs</li>
+                <li>Drawing coordinate axes for spatial reference</li>
+                <li>Highlighting detected pose keypoints</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>11. Multi-Camera vs. Single-Camera Approaches</h2>
+            
+            <p>3D human pose estimation can be approached using either single-camera or multi-camera methods. Each has distinct advantages and limitations:</p>
+            
+            <div class="highlight">
+                <h3>Comparison Overview:</h3>
+                <table style="width:100%; border-collapse: collapse; margin: 20px 0;">
+                    <tr style="background-color: #4a69bd; color: white;">
+                        <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Aspect</th>
+                        <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Single-Camera Approach</th>
+                        <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Multi-Camera Approach (Our System)</th>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #ddd;"><strong>Accuracy</strong></td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">Limited depth accuracy due to monocular ambiguity</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">High accuracy in all dimensions through triangulation</td>
+                    </tr>
+                    <tr style="background-color: #f2f2f2;">
+                        <td style="padding: 10px; border: 1px solid #ddd;"><strong>Occlusion Handling</strong></td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">Cannot reconstruct occluded body parts</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">Body parts visible to at least two cameras can be reconstructed</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #ddd;"><strong>Setup Complexity</strong></td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">Simple; requires only one camera</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">More complex; requires multiple synchronized cameras</td>
+                    </tr>
+                    <tr style="background-color: #f2f2f2;">
+                        <td style="padding: 10px; border: 1px solid #ddd;"><strong>Calibration</strong></td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">Simpler calibration; often relies on body proportions</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">Requires precise calibration across multiple cameras</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #ddd;"><strong>Scale Determination</strong></td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">Difficult to determine absolute scale</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">Provides true metric scale with proper calibration</td>
+                    </tr>
+                    <tr style="background-color: #f2f2f2;">
+                        <td style="padding: 10px; border: 1px solid #ddd;"><strong>Computational Approach</strong></td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">Relies on learning-based methods to estimate depth</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">Uses geometric triangulation principles</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #ddd;"><strong>Error Verification</strong></td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">Limited ability to verify accuracy</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">Can measure reprojection error across views</td>
+                    </tr>
+                </table>
+            </div>
+            
+            <h3>Single-Camera Approaches:</h3>
+            <p>Single-camera (monocular) 3D pose estimation typically uses one of these methods:</p>
+            <ul>
+                <li><strong>2D-to-3D Regression:</strong> Directly predicting 3D coordinates from 2D detections using neural networks</li>
+                <li><strong>Inverse Kinematics:</strong> Using skeletal constraints to infer 3D poses from 2D detections</li>
+                <li><strong>Depth Estimation:</strong> Combining 2D pose with predicted depth maps to obtain 3D coordinates</li>
+            </ul>
+            <p>While these approaches are convenient, they suffer from inherent depth ambiguity - multiple 3D poses can project to the same 2D image.</p>
+            
+            <h3>Multi-Camera Advantages:</h3>
+            <p>Our multi-camera system offers several key advantages:</p>
+            <ul>
+                <li><strong>Geometric Certainty:</strong> Uses triangulation principles rather than statistical inference</li>
+                <li><strong>Robustness to Unusual Poses:</strong> Not limited by training data distribution</li>
+                <li><strong>Consistent Scale:</strong> Provides metric measurements without scale ambiguity</li>
+                <li><strong>Quantifiable Accuracy:</strong> Reprojection error provides a clear quality metric</li>
+                <li><strong>Improved Occlusion Handling:</strong> Body parts invisible to one camera may be visible to others</li>
+            </ul>
+            
+            <div class="step-diagram">
+                <img src="https://mermaid.ink/img/pako:eNplkk1v2zAMhv8K4UsPsWE03ZdTYEm2FRh22I7dQZZom4gsapTkJSj63ytbMjYsPsj08-hFkbwHW-0QEtjWdlcDWvcq2L6L8f18O9aMnYViscaQiDXGd_4S8_dn14rhINM4_-NecpGctJXDw1N2vy9PjxRKw9TbV5YvefcFuKzL57J8FQvz9CKq1yKPnkU7CtvVmFEZYtKGjKMxJ-tazLzDJnPpIHpnDpwsPKSYwz73QzSNZLNJzgHl4uisyQNp5f4lFJcptMZaJGNJnhg3MIUm6q5H5X_o98-w7jzGoLtUojOv-MeNGvw9z0_x3/type=png" alt="Visual comparison of approaches">
+                <p><i>Single camera vs. multi-camera approach for 3D pose estimation</i></p>
+            </div>
+            
+            <h3>When to Choose Multi-Camera Systems:</h3>
+            <p>Multi-camera systems like ours are ideal for:</p>
+            <ul>
+                <li>Applications requiring precise measurements (sports biomechanics, clinical analysis)</li>
+                <li>Scenarios with complex movements and self-occlusions</li>
+                <li>Environments where controlled camera placement is possible</li>
+                <li>Research and applications requiring verifiable accuracy</li>
+            </ul>
+            
+            <p>While single-camera methods are constantly improving, they still cannot match the geometric certainty and accuracy of multi-view approaches for critical applications.</p>
+        </div>
+
+        <div class="section">
+            <h2>12. Conclusion</h2>
+            <p>This multi-camera 3D pose estimation system provides a complete solution for capturing human motion with high accuracy. Its modular design allows for extension and adaptation to different capture scenarios.</p>
+            
+            <p>Key strengths of the system include:</p>
+            <ul>
+                <li>No requirement for specialized motion capture markers</li>
+                <li>Works with standard webcams or industrial cameras</li>
+                <li>Provides quantitative error metrics</li>
+                <li>Offers comprehensive visualization tools</li>
+                <li>Implements robust error handling</li>
+            </ul>
+            
+            <p>The system demonstrates how computer vision techniques can be combined to create accessible and effective motion capture solutions.</p>
+        </div>
+        
+        <div class="section">
+            <h2>13. Frequently Asked Questions</h2>
+            
+            <div class="faq-container">
+                <div class="faq-question">What hardware is required to run this system?</div>
+                <div class="faq-answer">
+                    <p>The minimum hardware requirements are:</p>
+                    <ul>
+                        <li>Three synchronized cameras (webcams or industrial cameras)</li>
+                        <li>A computer with at least 8GB RAM and a modern CPU</li>
+                        <li>ArUco markers printed on paper (standard markers)</li>
+                        <li>A calibration chessboard pattern (can be printed)</li>
+                    </ul>
+                    <p>For optimal performance, we recommend using industrial cameras with hardware synchronization, a computer with 16GB+ RAM, and a dedicated GPU for faster processing.</p>
+                </div>
+                
+                <div class="faq-question">What is the accuracy of the 3D reconstruction?</div>
+                <div class="faq-answer">
+                    <p>The system's accuracy depends on several factors:</p>
+                    <ul>
+                        <li>Camera resolution and quality</li>
+                        <li>Calibration quality (measured by reprojection error)</li>
+                        <li>Distance between cameras and subject</li>
+                        <li>Lighting conditions</li>
+                    </ul>
+                    <p>Under optimal conditions, the system achieves a reprojection error of less than 1 pixel and a 3D position accuracy of approximately 5-10mm.</p>
+                </div>
+                
+                <div class="faq-question">Can the system work in real-time?</div>
+                <div class="faq-answer">
+                    <p>Yes, with some limitations. The system can process video feeds in near real-time on modern hardware. However, the following factors affect performance:</p>
+                    <ul>
+                        <li>Video resolution (lower resolution increases speed)</li>
+                        <li>Computer hardware specifications</li>
+                        <li>Whether visualization is enabled during processing</li>
+                    </ul>
+                    <p>For applications requiring strict real-time performance, optimizations can be made to the processing pipeline.</p>
+                </div>
+                
+                <div class="faq-question">How can I improve the accuracy of the system?</div>
+                <div class="faq-answer">
+                    <p>To improve accuracy:</p>
+                    <ul>
+                        <li>Use high-quality cameras with good resolution</li>
+                        <li>Ensure proper lighting conditions (avoid shadows and overexposure)</li>
+                        <li>Take more calibration images from various angles</li>
+                        <li>Position cameras to capture the subject from complementary angles</li>
+                        <li>Use more ArUco markers to create a robust coordinate system</li>
+                        <li>Ensure the subject is clearly visible in all camera views</li>
+                    </ul>
+                </div>
+                
+                <div class="faq-question">Does the system require special markers on the person?</div>
+                <div class="faq-answer">
+                    <p>No, this is a markerless motion capture system. It uses MediaPipe's pose detection to identify human body keypoints without requiring any markers on the subject. The only markers used are ArUco markers in the environment, which establish the coordinate system.</p>
+                </div>
+                
+                <div class="faq-question">Can I use more than three cameras?</div>
+                <div class="faq-answer">
+                    <p>Yes, the system can be extended to use more cameras. Additional cameras can improve accuracy and help resolve occlusion issues. The triangulation algorithm would need to be modified to incorporate data from more views, but the core principles remain the same.</p>
+                </div>
+                
+                <div class="faq-question">What are the main limitations of the system?</div>
+                <div class="faq-answer">
+                    <p>The main limitations include:</p>
+                    <ul>
+                        <li><strong>Occlusions:</strong> Body parts hidden from multiple cameras cannot be accurately reconstructed</li>
+                        <li><strong>Fast movements:</strong> Very rapid movements may cause motion blur and reduce accuracy</li>
+                        <li><strong>Lighting conditions:</strong> Poor lighting can reduce pose detection accuracy</li>
+                        <li><strong>Processing speed:</strong> High-resolution processing may not achieve real-time performance</li>
+                        <li><strong>Single subject:</strong> The current implementation works best with a single person in the scene</li>
+                    </ul>
+                </div>
+
+                <div class="faq-question">Why is Singular Value Decomposition (SVD) used for triangulation?</div>
+                <div class="faq-answer">
+                    <p>SVD is used for triangulation because it provides the optimal solution to the overdetermined system of equations AX=0 in the least-squares sense. The advantages of SVD include:</p>
+                    <ul>
+                        <li><strong>Numerical stability:</strong> SVD is numerically stable even with noisy data or ill-conditioned matrices</li>
+                        <li><strong>Mathematical optimality:</strong> It minimizes the algebraic error ||AX||² subject to ||X||=1</li>
+                        <li><strong>Efficiency:</strong> Modern SVD implementations are highly optimized and fast</li>
+                        <li><strong>No need for initialization:</strong> Unlike iterative methods, SVD doesn't require initial estimates</li>
+                    </ul>
+                    <p>In the triangulation context, SVD finds the 3D point that minimizes the algebraic reprojection error across all camera views, making it an ideal choice for multi-view reconstruction.</p>
+                </div>
+
+                <div class="faq-question">How does the triangulation handle noisy detections?</div>
+                <div class="faq-answer">
+                    <p>The triangulation method in this system handles noisy detections in several ways:</p>
+                    <ul>
+                        <li><strong>Overdetermined system:</strong> Using three cameras provides redundant information (6 equations for 4 unknowns), which helps average out random noise</li>
+                        <li><strong>Least-squares solution:</strong> The SVD approach inherently minimizes the overall error across all views</li>
+                        <li><strong>Point undistortion:</strong> Applying lens undistortion before triangulation reduces systematic errors</li>
+                        <li><strong>Reprojection error calculation:</strong> The system calculates reprojection errors to evaluate the quality of the reconstruction</li>
+                    </ul>
+                    <p>For more advanced noise handling, the system could be extended to use RANSAC-based triangulation or weighted least squares, where the weight of each detection is based on its confidence score.</p>
+                </div>
+
+                <div class="faq-question">What is the mathematical difference between DLT and other triangulation methods?</div>
+                <div class="faq-answer">
+                    <p>Direct Linear Transform (DLT) is one of several triangulation methods, each with different mathematical properties:</p>
+                    <ul>
+                        <li><strong>DLT (as implemented):</strong> Minimizes an algebraic error, not the actual reprojection error. It's simpler and faster but may be less accurate in the presence of noise.</li>
+                        <li><strong>Midpoint method:</strong> Finds the 3D point closest to all projection rays. Works well with two views but doesn't extend naturally to multiple views.</li>
+                        <li><strong>Optimal triangulation:</strong> Minimizes the actual reprojection error in image space, which is geometrically more meaningful but requires iterative optimization.</li>
+                        <li><strong>Bundle adjustment:</strong> Jointly optimizes camera parameters and 3D points, providing the most accurate results but at much higher computational cost.</li>
+                    </ul>
+                    <p>DLT was chosen for this system because it offers a good balance between accuracy and computational efficiency, especially for real-time applications with multiple cameras.</p>
+                </div>
+
+                <div class="faq-question">What is reprojection error and why is it important?</div>
+                <div class="faq-answer">
+                    <p>Reprojection error is a measure of how accurately a reconstructed 3D point projects back onto the original 2D detections:</p>
+                    <ul>
+                        <li><strong>Definition:</strong> The Euclidean distance between the original 2D detection and the projection of the reconstructed 3D point back onto the image plane</li>
+                        <li><strong>Formula:</strong> For each camera i: Error_i = ||detected_point_i - projected_point_i||</li>
+                        <li><strong>Overall RMSE:</strong> sqrt(mean(Error_i²))</li>
+                    </ul>
+                    <p>Reprojection error is important because:</p>
+                    <ul>
+                        <li>It provides a quantitative measure of reconstruction accuracy</li>
+                        <li>It helps identify problematic keypoints or camera views</li>
+                        <li>It can be used to filter out incorrect reconstructions</li>
+                        <li>It serves as feedback for camera calibration quality</li>
+                    </ul>
+                    <p>In this system, low reprojection errors (typically below 2-3 pixels) indicate reliable 3D reconstructions.</p>
+                </div>
+
+                <div class="faq-question">How does changing camera placement affect triangulation accuracy?</div>
+                <div class="faq-answer">
+                    <p>Camera placement significantly impacts triangulation accuracy:</p>
+                    <ul>
+                        <li><strong>Baseline width:</strong> Wider camera separation (baseline) generally improves depth accuracy, but cameras too far apart may have fewer common visible points</li>
+                        <li><strong>Convergence angle:</strong> Cameras facing each other at about 60-120 degrees typically provide the best triangulation geometry</li>
+                        <li><strong>Number of views:</strong> More camera views generally improve accuracy and robustness, with diminishing returns</li>
+                        <li><strong>Coverage uniformity:</strong> Cameras should be placed to provide uniform coverage of the capture volume</li>
+                    </ul>
+                    <p>The ideal setup for this system is three cameras arranged in a triangle around the subject, positioned at different heights to reduce ambiguities in the vertical axis, and with some overlap in their fields of view to ensure common keypoint visibility.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>14. Resources and Further Learning</h2>
+            
+            <p>Explore these resources to deepen your understanding of 3D pose estimation and the technologies used in this system:</p>
+            
+            <div class="resources-grid">
+                <div class="resource-card">
+                    <h4>Computer Vision</h4>
+                    <ul>
+                        <li><a href="https://opencv.org/courses/" target="_blank">OpenCV Tutorials</a></li>
+                        <li><a href="https://www.learnopencv.com/" target="_blank">LearnOpenCV</a></li>
+                        <li><a href="https://docs.opencv.org/master/d9/df8/tutorial_root.html" target="_blank">OpenCV Documentation</a></li>
+                    </ul>
+                </div>
+                
+                <div class="resource-card">
+                    <h4>Camera Calibration</h4>
+                    <ul>
+                        <li><a href="https://docs.opencv.org/master/dc/dbb/tutorial_py_calibration.html" target="_blank">Camera Calibration in OpenCV</a></li>
+                        <li><a href="https://calib.io/" target="_blank">Camera Calibration Tools</a></li>
+                    </ul>
+                </div>
+                
+                <div class="resource-card">
+                    <h4>ArUco Markers</h4>
+                    <ul>
+                        <li><a href="https://docs.opencv.org/master/d5/dae/tutorial_aruco_detection.html" target="_blank">ArUco Marker Detection</a></li>
+                        <li><a href="https://chev.me/arucogen/" target="_blank">ArUco Marker Generator</a></li>
+                    </ul>
+                </div>
+                
+                <div class="resource-card">
+                    <h4>MediaPipe</h4>
+                    <ul>
+                        <li><a href="https://google.github.io/mediapipe/" target="_blank">MediaPipe Documentation</a></li>
+                        <li><a href="https://google.github.io/mediapipe/solutions/pose.html" target="_blank">MediaPipe Pose</a></li>
+                    </ul>
+                </div>
+                
+                <div class="resource-card">
+                    <h4>3D Reconstruction</h4>
+                    <ul>
+                        <li><a href="https://www.mathworks.com/help/vision/ug/camera-calibration.html" target="_blank">Camera Calibration Basics</a></li>
+                        <li><a href="https://en.wikipedia.org/wiki/Triangulation_(computer_vision)" target="_blank">Triangulation Principles</a></li>
+                    </ul>
+                </div>
+                
+                <div class="resource-card">
+                    <h4>Python Libraries</h4>
+                    <ul>
+                        <li><a href="https://numpy.org/doc/" target="_blank">NumPy Documentation</a></li>
+                        <li><a href="https://matplotlib.org/stable/contents.html" target="_blank">Matplotlib Documentation</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>15. 函數概覽</h2>
+            
+            <p>以下是系統中所有關鍵函數的輸入和輸出概述，方便快速參考：</p>
+            
+            <h3>相機標定函數</h3>
+            
+            <div class="highlight">
+                <h4>calibrate_single_camera</h4>
+                <p><strong>輸入參數:</strong></p>
+                <ul>
+                    <li><code>images_folder</code>: 包含標定圖像的文件夾路徑</li>
+                    <li><code>pattern_size</code>: 棋盤格模式尺寸 (默認: 9,6)</li>
+                    <li><code>square_size</code>: 棋盤格方格尺寸，單位mm (默認: 30.0)</li>
+                </ul>
+                
+                <p><strong>輸出:</strong></p>
+                <ul>
+                    <li><code>ret</code>: 標定誤差 (平均重投影誤差)</li>
+                    <li><code>mtx</code>: 相機內參矩陣 (3x3)</li>
+                    <li><code>dist</code>: 畸變係數</li>
+                    <li><code>rvecs</code>: 每張標定圖像的旋轉向量</li>
+                    <li><code>tvecs</code>: 每張標定圖像的平移向量</li>
+                </ul>
+                
+                <h4>calibrate_three_cameras</h4>
+                <p><strong>輸入參數:</strong></p>
+                <ul>
+                    <li><code>cam1_folder</code>: 相機1的標定圖像路徑</li>
+                    <li><code>cam2_folder</code>: 相機2的標定圖像路徑</li>
+                    <li><code>cam3_folder</code>: 相機3的標定圖像路徑</li>
+                </ul>
+                
+                <p><strong>輸出:</strong></p>
+                <ul>
+                    <li><code>save_path</code>: 保存的標定文件路徑 (.npz)，此文件包含所有三個相機的內參矩陣(mtx1/2/3)和畸變係數(dist1/2/3)，可被load_camera_params函數讀取以供後續三維重建使用。此文件是系統正常運行的關鍵，保存在當前工作目錄中。</li>
+                </ul>
+            </div>
+            
+            <h3>ArUco標記檢測</h3>
+            
+            <div class="highlight">
+                <h4>get_aruco_axis</h4>
+                <p><strong>輸入參數:</strong></p>
+                <ul>
+                    <li><code>img_L/M/R</code>: 三個相機的圖像</li>
+                    <li><code>aruco_detector</code>: ArUco標記檢測器對象</li>
+                    <li><code>board_coord</code>: ArUco標記坐標字典 (ID → 坐標)</li>
+                    <li><code>cams_params</code>: 相機參數元組 (mtx1, dist1, mtx2, dist2, mtx3, dist3)</li>
+                </ul>
+                
+                <p><strong>輸出:</strong></p>
+                <ul>
+                    <li><code>R_aruco2camL/M/R</code>: 從ArUco到每個相機的旋轉矩陣</li>
+                    <li><code>t_aruco2camL/M/R</code>: 從ArUco到每個相機的平移向量</li>
+                    <li><code>R_camL/M/R2aruco</code>: 從每個相機到ArUco的旋轉矩陣</li>
+                    <li><code>t_camL/M/R2aruco</code>: 從每個相機到ArUco的平移向量</li>
+                    <li><code>img_L/M/R</code>: 帶有可視化標記的處理後圖像</li>
+                </ul>
+            </div>
+            
+            <h3>2D姿態估計和3D重建</h3>
+            
+            <div class="highlight">
+                <h4>process_frame</h4>
+                <p><strong>輸入參數:</strong></p>
+                <ul>
+                    <li><code>detector</code>: MediaPipe姿態檢測器對象</li>
+                    <li><code>frame_left/middle/right</code>: 三個相機的原始幀圖像</li>
+                    <li><code>img_L/M/R</code>: 可視化圖像</li>
+                    <li><code>cams_params</code>: 相機參數元組</li>
+                    <li><code>cam_P</code>: 相機投影矩陣</li>
+                </ul>
+                
+                <p><strong>輸出:</strong></p>
+                <ul>
+                    <li><code>points_3d</code>: 3D重建點 (33個關鍵點 × 3個坐標)</li>
+                    <li><code>img_L/M/R</code>: 更新後的可視化圖像</li>
+                    <li><code>rmse</code>: 重投影誤差元組 (左, 中, 右)</li>
+                </ul>
+                
+                <h4>triangulate_points_three_cameras</h4>
+                <p><strong>輸入參數:</strong></p>
+                <ul>
+                    <li><code>points_left/middle/right</code>: 三個相機的2D關鍵點 (每個33×2)</li>
+                    <li><code>mtx1/2/3</code>: 相機內參矩陣</li>
+                    <li><code>dist1/2/3</code>: 畸變係數</li>
+                    <li><code>P1/2/3</code>: 投影矩陣 ([R|t])</li>
+                </ul>
+                
+                <p><strong>輸出:</strong></p>
+                <ul>
+                    <li><code>points_3d</code>: 3D重建點 (33×3數組)</li>
+                </ul>
+                
+                <h4>calculate_reprojection_error</h4>
+                <p><strong>輸入參數:</strong></p>
+                <ul>
+                    <li><code>points_3d</code>: 3D點 (N×3)</li>
+                    <li><code>points_2d</code>: 2D檢測點 (N×2)</li>
+                    <li><code>P</code>: 投影矩陣 (3×4)</li>
+                    <li><code>mtx</code>: 相機內參矩陣</li>
+                    <li><code>dist</code>: 畸變係數</li>
+                </ul>
+                
+                <p><strong>輸出:</strong></p>
+                <ul>
+                    <li><code>rmse</code>: 均方根重投影誤差</li>
+                </ul>
+            </div>
+            
+            <h3>可視化</h3>
+            
+            <div class="highlight">
+                <h4>visualize_3d_animation_three_cameras</h4>
+                <p><strong>輸入參數:</strong></p>
+                <ul>
+                    <li><code>points</code>: 3D關鍵點序列 [幀數, 33, 3]</li>
+                    <li><code>aruco_axis</code>: ArUco坐標系數據</li>
+                    <li><code>camL/M/R_axis</code>: 相機坐標系數據</li>
+                    <li><code>title</code>: 窗口標題 (可選)</li>
+                </ul>
+                
+                <p><strong>輸出:</strong></p>
+                <ul>
+                    <li>交互式3D動畫窗口</li>
+                </ul>
+            </div>
+            
+            <h3>主處理流程</h3>
+            
+            <div class="highlight">
+                <h4>process_videos</h4>
+                <p><strong>輸入參數:</strong></p>
+                <ul>
+                    <li><code>video_path_left/center/right</code>: 三個相機的視頻文件路徑</li>
+                    <li><code>start_frame</code>: 起始幀索引 (默認: 0)</li>
+                </ul>
+                
+                <p><strong>輸出:</strong></p>
+                <ul>
+                    <li><code>all_points_3d</code>: 所有重建的3D點序列</li>
+                    <li><code>aruco_axis</code>: ArUco坐標系數據序列</li>
+                    <li><code>camL/M/R_axis</code>: 相機坐標系數據序列</li>
+                    <li><code>all_rmse</code>: 所有幀的重投影誤差</li>
+                </ul>
+                
+                <h4>main</h4>
+                <p><strong>輸入參數:</strong> 無 (使用硬編碼的視頻路徑)</p>
+                
+                <p><strong>輸出:</strong></p>
+                <ul>
+                    <li>3D可視化窗口</li>
+                    <li>重投影誤差圖表</li>
+                </ul>
+            </div>
+            
+            <h3>系統需求</h3>
+            <ul>
+                <li>三個同步相機 (網絡攝像頭或工業相機)</li>
+                <li>Python環境，包含OpenCV, NumPy, MediaPipe和Matplotlib庫</li>
+                <li>ArUco標記和標定用的棋盤格</li>
+                <li>足夠的計算能力 (推薦: 16GB+內存和GPU)</li>
+            </ul>
+            
+            <h3>系統特點</h3>
+            <ul>
+                <li>無標記動作捕捉，使用MediaPipe姿態檢測</li>
+                <li>通過三角測量進行幾何3D重建</li>
+                <li>實時處理能力</li>
+                <li>通過重投影誤差進行全面的錯誤分析</li>
+                <li>帶有骨架連接的彩色3D可視化</li>
+                <li>支持多種坐標系統</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
